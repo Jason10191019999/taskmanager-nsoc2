@@ -16,13 +16,43 @@ const previousMonthButton = document.getElementById('previous-month');
 const nextMonthButton = document.getElementById('next-month');
 
 // Application State
-let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let tasks = loadTasks();
 let priorityChart = null;
 let weeklyChart = null;
 let chartMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let historyMode = false;
 let currentFilter = 'active';
 let lastRenderDate = getTodayDate();
+
+/**
+ * Loads valid tasks from browser localStorage.
+ */
+function loadTasks() {
+    try {
+        const storedTasks = JSON.parse(localStorage.getItem('tasks'));
+        if (!Array.isArray(storedTasks)) return [];
+        return storedTasks.filter(isValidTask);
+    } catch (error) {
+        return [];
+    }
+}
+
+/**
+ * Checks whether a stored record has the required task fields and types.
+ */
+function isValidTask(task) {
+    if (!task || typeof task !== 'object' || Array.isArray(task)) return false;
+
+    const hasValidCompletedAt = task.completedAt === null ||
+        (typeof task.completedAt === 'string' && !Number.isNaN(Date.parse(task.completedAt)));
+
+    return typeof task.text === 'string' &&
+        task.text.trim() !== '' &&
+        typeof task.dueDate === 'string' &&
+        ['low', 'medium', 'high'].includes(task.priority) &&
+        typeof task.completed === 'boolean' &&
+        hasValidCompletedAt;
+}
 
 /**
  * Persists current task list to browser localStorage.
